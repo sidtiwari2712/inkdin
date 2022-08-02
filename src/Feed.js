@@ -8,37 +8,42 @@ import "./css/feed.css"
 import Post from './Post';
 import { db } from './firebase';
 import firebase from './firebase'
+import { selectUser } from './features/userSlice';
+import { useSelector } from 'react-redux';
 
 
-function Feed() {
+
+
+const Feed = () => {
+    const user = useSelector(selectUser)
     const [posts, setPost] = useState([]);
     const [input, setInput] = useState();
     const submitPost = (e) => {
         e.preventDefault();
         db.collection("posts").add({
-            name: "Siddharth tiwari",
+            name: user.displayName,
             description: "This is test description",
             message: input,
-            photoURL: "https://yt3.ggpht.com/if_2mAiMoQfmNEjbBS8wibWtgO2ue70mBG64RAoi-4QcyfOSc-pwHTJXEiVaiL8ydIxOv1aKffI=s88-c-k-c0x00ffffff-no-rj-mo",
+            photoURL: user.photoURL,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         });
         setInput("");
     }
     useEffect(() => {
-        db.collection("posts").orderBy("timeStamp", "desc").onSnapshot(snapshot => {
-            console.log(snapshot);
+        db.collection("posts").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+
             setPost(snapshot.docs.map(doc => ({
                 id: doc.id,
                 data: doc.data()
             })))
         })
-    }, []);
+    }, [])
 
     return (
         <div className="feed">
             <div className="feed__input">
                 <div className="feed__form">
-                    <Avatar src="https://yt3.ggpht.com/if_2mAiMoQfmNEjbBS8wibWtgO2ue70mBG64RAoi-4QcyfOSc-pwHTJXEiVaiL8ydIxOv1aKffI=s88-c-k-c0x00ffffff-no-rj-mo" />
+                    <Avatar src={user.photoURL} />
                     <form onSubmit={submitPost}>
                         <input type="text" placeholder="start a post" value={input} onChange={e => setInput(e.target.value)} />
                         <input type="submit" />
@@ -65,13 +70,18 @@ function Feed() {
                 </div>
             </div>
             {
-                posts.map(({ id, data: { name, description, message, photoURL } }) => (
-                    <Post name={name}
-                        description={description}
-                        message={message}
-                        photoURL={photoURL} />
+                posts.map((data) => {
+                    return (
+                        <>
+                            <Post key={data.id}
+                                name={data.name}
+                                description={data.description}
+                                message={data.message}
+                                photoURL={data.photoURL} />
+                        </>
+                    )
 
-                ))
+                })
             }
         </div>
     );
